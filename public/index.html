@@ -10,7 +10,7 @@
       body {
         margin: 0;
         padding: 0;
-        background: #000000 url(/globe/loading.gif) center center no-repeat;
+        background: #000000 url(images/loading.gif) center center no-repeat;
         color: #ffffff;
         font-family: sans-serif;
         font-size: 13px;
@@ -114,17 +114,17 @@
   <script type="text/javascript" src="third-party/three.min.js"></script>
   <script type="text/javascript" src="third-party/extras.min.js"></script>
   <script type="text/javascript" src="third-party/Tween.js"></script>
-  <script type="text/javascript" src="coast.js"></script>
-  <script type="text/javascript" src="country.js"></script>
-  <script type="text/javascript" src="world.js"></script>
-  <script type="text/javascript" src="globe.js"></script>
+  <script type="text/javascript" src="scripts/coast.js"></script>
+  <script type="text/javascript" src="scripts/country.js"></script>
+  <script type="text/javascript" src="scripts/world.js"></script>
+  <script type="text/javascript" src="scripts/globe.js"></script>
   <script type="text/javascript">
 
       var socket = io();
       socket.on("tweet", function(tweet) {
-        console.log(tweet) 
+        console.log(tweet)
       });
-      
+
       var container = document.getElementById('container');
       var globe = new DAT.Globe(container);
 
@@ -134,7 +134,7 @@
 
       console.log(globe);
       var i, tweens = [];
-      
+
       /*var settime = function(globe, t) {
         return function() {
           new TWEEN.Tween(globe).to({time: t/years.length},500).easing(TWEEN.Easing.Cubic.EaseOut).start();
@@ -149,15 +149,15 @@
           y.setAttribute('class', 'year active');
         };
       };*/
-      
+
       /*for(var i = 0; i<years.length; i++) {
         var y = document.getElementById('year'+years[i]);
         y.addEventListener('mouseover', settime(globe,i), false);
       }*/
-      
+
       // TWEEN.start();
-      
-      
+
+
       /*xhr.open('GET', '/globe/population909500.json', true);
       xhr.onreadystatechange = function(e) {
         if (xhr.readyState === 4) {
