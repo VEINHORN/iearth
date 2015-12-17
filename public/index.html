@@ -3,6 +3,7 @@
   <head>
     <title>WebGL Globe</title>
     <meta charset="utf-8">
+    <link href="styles/third-party/toastr.min.css" rel="stylesheet"/>
     <style type="text/css">
       html {
         height: 100%;
@@ -10,7 +11,7 @@
       body {
         margin: 0;
         padding: 0;
-        background: #000000 url(/globe/loading.gif) center center no-repeat;
+        background: #000000 url(images/loading.gif) center center no-repeat;
         color: #ffffff;
         font-family: sans-serif;
         font-size: 13px;
@@ -148,19 +149,18 @@
     3D-Twiiter
   </div>
 
-  <!-- // <script type="text/javascript" src="third-party/Detector.js"></script> -->
   <script src="/socket.io/socket.io.js"></script>
-   <!-- // <script type="text/javascript" src="three.min.js"></script> -->
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r67/three.js"></script>
-  <!--  <script type="text/javascript" src="third-party/extras.min.js"></script> -->
   <script type="text/javascript" src="third-party/Tween.js"></script>
   <script type="text/javascript" src="TrackballControls.js"></script>
   <script type="text/javascript" src="third-party/CSSRenderer.js"></script>
   <script src="https://dl.dropboxusercontent.com/u/3587259/Code/Threejs/OrbitControls.js"></script>
-  <script type="text/javascript" src="coast.js"></script>
-  <script type="text/javascript" src="country.js"></script>
-  <script type="text/javascript" src="world.js"></script>
-  <script type="text/javascript" src="globe.js"></script>
+  <script type="text/javascript" src="scripts/coast.js"></script>
+  <script type="text/javascript" src="scripts/country.js"></script>
+  <script type="text/javascript" src="scripts/world.js"></script>
+  <script type="text/javascript" src="scripts/globe.js"></script>
+  <script type="text/javascript" src="third-party/jquery.min.js"></script>
+  <script type="text/javascript" src="third-party/toastr.min.js"></script>
   <script type="text/javascript">
 
       var socket = io();
@@ -173,8 +173,15 @@
           image: tweet.user.profile_image_url
         }
         globe.addTweet(tweetForGlobe);
+        toastr.options = {
+          "closeButton": true,
+          "newestOnTop": true,
+          "timeOut": 30000,
+          "progressBar": true
+        }
+        toastr.info("<div><p>" + tweet.text + "</p></div>");
       });
-      
+
       var container = document.getElementById('container');
       var globe = new DAT.Globe(container);
 
@@ -183,7 +190,7 @@
       // globe.addData(data[i][1], {format: 'magnitude', name: data[i][0], animated: true});
 
       var i, tweens = [];
-      
+
       /*var settime = function(globe, t) {
         return function() {
           new TWEEN.Tween(globe).to({time: t/years.length},500).easing(TWEEN.Easing.Cubic.EaseOut).start();
@@ -198,15 +205,15 @@
           y.setAttribute('class', 'year active');
         };
       };*/
-      
+
       /*for(var i = 0; i<years.length; i++) {
         var y = document.getElementById('year'+years[i]);
         y.addEventListener('mouseover', settime(globe,i), false);
       }*/
-      
+
       // TWEEN.start();
-      
-      
+
+
       /*xhr.open('GET', '/globe/population909500.json', true);
       xhr.onreadystatechange = function(e) {
         if (xhr.readyState === 4) {
@@ -226,7 +233,5 @@
       xhr.send(null);*/
 
   </script>
-
   </body>
-
 </html>
