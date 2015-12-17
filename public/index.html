@@ -98,7 +98,46 @@
         background: url(/globe/ce.png);
       }
 
+      .element {
+        width: 400px;
+        height: 120px;
+        /*box-shadow: 0px 0px 12px rgba(0,255,255,0.5);*/
+        /*border: 3px solid black;*/
+        background: white;
+        cursor: default;
+        color: #111;
+        font-size: 18px;
+        padding: 30px;
+        /*padding-left: 10px;*/
+        border-radius: 3px;
+        /*opacity: 0.7;*/
+      }
 
+      .element img {
+        float: left;
+        margin: 15px;
+      }
+      .element p {
+        margin-top: 15px;
+        margin-right: 15px;
+      }
+
+       .element:before {
+        content: "";
+        display: block;
+        width: 0; 
+        height: 0; 
+        border-left: 14px solid transparent;
+        border-top: 14px solid  transparent;
+        border-right: 14px solid transparent; 
+        position: absolute;
+        top: 60px;
+        left: 0;
+      }
+
+      .element:hover {
+       
+      }
     </style>
   </head>
   <body>
@@ -111,9 +150,13 @@
 
   <!-- // <script type="text/javascript" src="third-party/Detector.js"></script> -->
   <script src="/socket.io/socket.io.js"></script>
-  <script type="text/javascript" src="third-party/three.min.js"></script>
-  <script type="text/javascript" src="third-party/extras.min.js"></script>
+   <!-- // <script type="text/javascript" src="three.min.js"></script> -->
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r67/three.js"></script>
+  <!--  <script type="text/javascript" src="third-party/extras.min.js"></script> -->
   <script type="text/javascript" src="third-party/Tween.js"></script>
+  <script type="text/javascript" src="TrackballControls.js"></script>
+  <script type="text/javascript" src="third-party/CSSRenderer.js"></script>
+  <script src="https://dl.dropboxusercontent.com/u/3587259/Code/Threejs/OrbitControls.js"></script>
   <script type="text/javascript" src="coast.js"></script>
   <script type="text/javascript" src="country.js"></script>
   <script type="text/javascript" src="world.js"></script>
@@ -122,17 +165,23 @@
 
       var socket = io();
       socket.on("tweet", function(tweet) {
-        console.log(tweet) 
+        console.log(tweet)
+        var tweetForGlobe = {
+          lat: tweet.coordinates.coordinates[1],
+          lng: tweet.coordinates.coordinates[0],
+          text : tweet.text,
+          image: tweet.user.profile_image_url
+        }
+        globe.addTweet(tweetForGlobe);
       });
       
       var container = document.getElementById('container');
       var globe = new DAT.Globe(container);
 
-      globe.animate();
+      // globe.animate();
 
       // globe.addData(data[i][1], {format: 'magnitude', name: data[i][0], animated: true});
 
-      console.log(globe);
       var i, tweens = [];
       
       /*var settime = function(globe, t) {

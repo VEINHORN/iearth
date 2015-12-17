@@ -1,16 +1,3 @@
-/**
- * dat.globe Javascript WebGL Globe Toolkit
- * http://dataarts.github.com/dat.globe
- *
- * Copyright 2011 Data Arts Team, Google Creative Lab
- *
- * Licensed under the Apache License, Version 2.0 (the 'License');
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- */
-
 var DAT = DAT || {};
 
 DAT.Globe = function(container, colorFn) {
@@ -88,7 +75,7 @@ DAT.Globe = function(container, colorFn) {
     }
   };
 
-  var camera, scene, sceneAtmosphere, renderer, w, h;
+  var camera, scene, sceneAtmosphere, tweetScene, renderer, w, h, CSSRenderer, controls;
   var vector, mesh, atmosphere, point;
 
   var overRenderer;
@@ -116,26 +103,39 @@ DAT.Globe = function(container, colorFn) {
     w = window.innerWidth;
     h = window.innerHeight;
 
-    camera = new THREE.Camera(
-        30, w / h, 1, 10000);
-    camera.position.z = distance;
+    camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 10000 );
+    camera.position.z = 800;
 
     vector = new THREE.Vector3();
 
     scene = new THREE.Scene();
     sceneAtmosphere = new THREE.Scene();
+    tweetScene = new THREE.Scene();
 
-    projector = new THREE.Projector();
+    var spotLight = new THREE.SpotLight( 0xffffff, 0.5);
+    spotLight.position.set( 100, 1000, 100 );
+    
+    spotLight.castShadow = true;
+    
+    spotLight.shadowMapWidth = 1024;
+    spotLight.shadowMapHeight = 1024;
+    
+    spotLight.shadowCameraNear = 500;
+    spotLight.shadowCameraFar = 4000;
+    spotLight.shadowCameraFov = 30;
+    
+    scene.add( spotLight );
+
+    var light = new THREE.HemisphereLight( 0x1797C9, 0x080820, 0.5 );
+    scene.add( light );
+
+    // projector = new THREE.Projector();
     var PI2 = Math.PI * 2;
-    particleMaterial = new THREE.ParticleBasicMaterial( {
-      color: 0x000000
-    } );
+    // particleMaterial = new THREE.MeshLambertMaterial( {
+      // color: 0x000000
+    // } );
 
-    var geometry = new THREE.Sphere(200, 40, 30);
-
-    // uniforms['texture'].texture = THREE.ImageUtils.loadTexture(imgDir+'world' + '.jpg');
-
-    /*material = new THREE.MeshShaderMaterial({
+    /*material = new THREE.ShaderMaterial({
 
           uniforms: uniforms,
           vertexShader: shader.vertexShader,
@@ -144,19 +144,28 @@ DAT.Globe = function(container, colorFn) {
         });*/
 
     var ambLight = new THREE.AmbientLight(0x404040);
-    scene.addObject(ambLight);
- 
-    var blueMaterial = new THREE.MeshLambertMaterial( { color: 0xB6E5FC, transparent: true, opacity: 0.1 } );
+    scene.add(ambLight);
+
+    geometry = new THREE.SphereGeometry(200, 40, 40);
+
+    blueMaterial = new THREE.MeshLambertMaterial( { color: 0xB6E5FC, transparent: true, opacity: 0.1 } );
+    // blueMaterial.blending  = THREE.NoBlending;
 
     mesh = new THREE.Mesh(geometry, blueMaterial);
     mesh.matrixAutoUpdate = false;
-    scene.addObject(mesh);
+    scene.add(mesh);
+
+    // addTweetMarker(35.52472915, 139.41336078);
+
+    // addTweetMarker(28.90944448, 40.99504243);
+
+
 
     function loadLineMesh(loader, material, offset) {
       var lines = loader().children[0].children[0].attributes.Vertex.elements;
       var lineGeo = new THREE.Geometry();
       for (var i=0; i<lines.length; i+=3) {
-        lineGeo.vertices.push(new THREE.Vertex(new THREE.Vector3(lines[i], lines[i+1], lines[i+2])));
+        lineGeo.vertices.push(new THREE.Vector3(lines[i], lines[i+1], lines[i+2]));
       }
       var lineMesh = new THREE.Line(lineGeo, material);
       lineMesh.type = THREE.Lines;
@@ -174,20 +183,22 @@ DAT.Globe = function(container, colorFn) {
       var i = 0;
       for (i=0; i<lines.length; i+=3) {
         lineGeo.vertices.push(
-          new THREE.Vertex(
             new THREE.Vector3(lines[i], lines[i+1], lines[i+2])
-          )
         );
       }
       for (i=0; i<lines.length/3; i+=3) {
         lineGeo.faces.push(new THREE.Face3(i, i+1, i+2, null, null));
       }
-      lineGeo.computeCentroids();
+      console.log(lineGeo)
+      // lineGeo.computeCentroids();
       lineGeo.computeFaceNormals();
       lineGeo.computeVertexNormals();
       lineGeo.computeBoundingSphere();
+      material.side = THREE.DoubleSide;
+      material.blending  = THREE.NoBlending;
+
       var lineMesh = new THREE.Mesh(lineGeo, material);
-      // lineMesh.type = THREE.Triangles;
+      lineMesh.type = THREE.Triangles;
       lineMesh.scale.x = lineMesh.scale.y = lineMesh.scale.z = 0.0000319;
       lineMesh.rotation.x = -Math.PI/2;
       lineMesh.rotation.z = Math.PI;
@@ -203,8 +214,7 @@ DAT.Globe = function(container, colorFn) {
 
     //with shaders
 
-    material = new THREE.MeshShaderMaterial({
-          color: 0x91D0FA,
+    material = new THREE.ShaderMaterial({
           uniforms: uniforms,
           vertexShader: shader.vertexShader,
           fragmentShader: shader.fragmentShader
@@ -212,14 +222,14 @@ DAT.Globe = function(container, colorFn) {
         });
     
     //without shaders
-    // material = new THREE.MeshLambertMaterial( { color: 0x91D0FA, specular: 0x050505, shininess: 100} );
+    // material = new THREE.MeshPhongMaterial( { color: 0x3CBCEF, specular: 0x050505, shininess: 100} );
 
-    scene.addObject(loadTriMesh(getWorld, material));
+    scene.add(loadTriMesh(getWorld, material));
 
     shader = Shaders['atmosphere'];
     uniforms = THREE.UniformsUtils.clone(shader.uniforms);
 
-    material = new THREE.MeshShaderMaterial({
+    material = new THREE.ShaderMaterial({
 
           uniforms: uniforms,
           vertexShader: shader.vertexShader,
@@ -227,41 +237,30 @@ DAT.Globe = function(container, colorFn) {
 
         });
 
+
     mesh = new THREE.Mesh(geometry, material);
     mesh.scale.x = mesh.scale.y = mesh.scale.z = 1.1;
-    mesh.flipSided = true;
-    mesh.matrixAutoUpdate = false;
+    mesh.matrixAutoUpdate = true;
     mesh.updateMatrix();
-    sceneAtmosphere.addObject(mesh);
+    // sceneAtmosphere.add(mesh);
 
-    sceneAtmosphere.addObject(loadLineMesh(getCoast, new THREE.LineBasicMaterial({
+    sceneAtmosphere.add(loadLineMesh(getCoast, new THREE.LineBasicMaterial({
       linewidth: 3,
       color:0x276F9C, opacity: 0.8
     }), -2));
-    sceneAtmosphere.addObject(loadLineMesh(getCoast, new THREE.LineBasicMaterial({
+    sceneAtmosphere.add(loadLineMesh(getCoast, new THREE.LineBasicMaterial({
       linewidth:1,
       color:0x276F9C, opacity: 0.4
     }), 0.5));
 
-
-    geometry = new THREE.Cube(0.75, 0.75, 1, 1, 1, 1, null, false, { px: true,
-          nx: true, py: true, ny: true, pz: false, nz: true});
-
-    for (var i = 0; i < geometry.vertices.length; i++) {
-
-      var vertex = geometry.vertices[i];
-      vertex.position.z += 0.5;
-
-    }
-
-    point = new THREE.Mesh(geometry);
-
-    renderer = new THREE.WebGLRenderer({antialias: true});
+    renderer = new THREE.WebGLRenderer({antialias: true, alpha:true});
     renderer.autoClear = false;
-    renderer.setClearColorHex(0x2B3036, 0.0);
+    renderer.setClearColor(0x2b3036, 1.0);
     renderer.setSize(w, h);
-
     renderer.domElement.style.position = 'absolute';
+    renderer.domElement.style.top = 0;
+    renderer.domElement.style.zIndex  = 1;
+    document.body.appendChild( renderer.domElement );
 
     var coastLine = getCoast();
 
@@ -271,7 +270,23 @@ DAT.Globe = function(container, colorFn) {
 
     container.appendChild(renderer.domElement);
 
-    container.addEventListener('mousedown', onMouseDown, false);
+    /*controls = new THREE.TrackballControls( camera, renderer.domElement );
+    controls.rotateSpeed = 10;
+    controls.minDistance = 500;
+    controls.maxDistance = 6000;
+    controls.addEventListener( 'change', render );*/
+    controls = new THREE.OrbitControls( camera );
+    controls.addEventListener( 'change', render );
+
+    CSSRenderer = new THREE.CSS3DRenderer();
+    CSSRenderer.setSize( window.innerWidth, window.innerHeight );
+    CSSRenderer.domElement.style.position = 'absolute';
+    CSSRenderer.domElement.style.top = 0;
+    // CSSRenderer.domElement.style.zIndex  = 10;
+    container.appendChild( CSSRenderer.domElement );
+
+
+    /*container.addEventListener('mousedown', onMouseDown, false);
 
     container.addEventListener('mousewheel', onMouseWheel, false);
 
@@ -285,16 +300,81 @@ DAT.Globe = function(container, colorFn) {
 
     container.addEventListener('mouseout', function() {
       overRenderer = false;
-    }, false);
+    }, false);*/
+
+    // render(10);
   }
+
+  var addTweetMarker = function(tweet) {
+      var material = new THREE.MeshBasicMaterial();
+      var geometry = new THREE.PlaneGeometry(102, 32, 32);
+      material.color.set('black')
+      material.opacity   = 0;
+      material.blending  = THREE.NoBlending;
+      material.side = THREE.DoubleSide;
+      var planeMesh= new THREE.Mesh( geometry, material );
+  
+      var phi = (90 - tweet.lat) * Math.PI / 180;
+      var theta = (180 - tweet.lng) * Math.PI / 180;
+  
+      var x = 230 * Math.sin(phi) * Math.cos(theta);
+      var y = 230 * Math.cos(phi);
+      var z = 230 * Math.sin(phi) * Math.sin(theta);
+
+      planeMesh.position.x = x;
+      planeMesh.position.y = y;
+      planeMesh.position.z = z;
+
+      x = 240 * Math.sin(phi) * Math.cos(theta);
+      y = 240 * Math.cos(phi);
+      z = 240 * Math.sin(phi) * Math.sin(theta);
+
+      vector = new THREE.Vector3(x,y,z);
+
+      planeMesh.lookAt(vector);
+      // planeMesh.rotation.x = 10;
+
+      scene.add(planeMesh);
+      // console.log(scene);
+  
+      var element = document.createElement( 'div' );
+      element.className = 'element';
+      var text = document.createElement( 'p' );
+      text.innerHTML = tweet.text;
+      var image = document.createElement( 'img' );
+      image.src = tweet.image;
+      element.appendChild( image );
+      element.appendChild(text);
+      element.addEventListener("click", function() {
+        console.log('hey', tweet)
+      })
+
+
+  
+      object = new THREE.CSS3DObject( element );
+      object.scale.x = 0.25;
+      object.scale.y = 0.25;
+
+  
+      console.log(planeMesh)
+  
+      object.position = planeMesh.position;
+      object.lookAt(vector);
+      // object.rotation = planeMesh.rotation;
+  
+  
+      // object.lookAt(mesh.position);
+  
+      tweetScene.add(object);
+      render();
+    }
 
   addData = function(data, opts) {
     var lat, lng, size, color, i, step, colorFnWrapper;
 
     opts.animated = opts.animated || false;
     this.is_animated = opts.animated;
-    opts.format = opts.format || 'magnitude'; // other option is 'legend'
-    console.log(opts.format);
+    opts.format = opts.format || 'magnitude'; // other option is 'legend';
     if (opts.format === 'magnitude') {
       step = 3;
       colorFnWrapper = function(data, i) { return colorFn(data[i+2]); }
@@ -365,7 +445,7 @@ DAT.Globe = function(container, colorFn) {
               morphTargets: true
             }));
       }
-      scene.addObject(this.points);
+      scene.add(this.points);
     }
   }
 
@@ -405,7 +485,7 @@ DAT.Globe = function(container, colorFn) {
   }
 
 
-  function onMouseDown(event) {
+  /*function onMouseDown(event) {
     event.preventDefault();
 
     container.addEventListener('mousemove', onMouseMove, false);
@@ -422,9 +502,9 @@ DAT.Globe = function(container, colorFn) {
 
     container.style.cursor = 'move';
 
-  }
+  }*/
 
-  function onMouseMove(event) {
+  /*function onMouseMove(event) {
     mouse.x = - event.clientX;
     mouse.y = event.clientY;
 
@@ -442,11 +522,11 @@ DAT.Globe = function(container, colorFn) {
 
     target.y = target.y > PI_HALF ? PI_HALF : target.y;
     target.y = target.y < - PI_HALF ? - PI_HALF : target.y;
-  }
+  }*/
 
   lastClick = 0;
 
-  function onMouseUp(event) {
+  /*function onMouseUp(event) {
     container.removeEventListener('mousemove', onMouseMove, false);
     container.removeEventListener('mouseup', onMouseUp, false);
     container.removeEventListener('mouseout', onMouseOut, false);
@@ -458,9 +538,9 @@ DAT.Globe = function(container, colorFn) {
       lastClick = t;
 
       var vector = new THREE.Vector3( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1, 0.5 );
-      projector.unprojectVector( vector, camera );
+      // projector.unprojectVector( vector, camera );
 
-      var ray = new THREE.Ray( camera.position, vector.subSelf( camera.position ).normalize() );
+      // var ray = new THREE.Ray( camera.position, vector.subSelf( camera.position ).normalize() );
 
       var intersects = ray.intersectScene( scene );
       if ( intersects.length > 0 ) {
@@ -479,15 +559,15 @@ DAT.Globe = function(container, colorFn) {
           }));
           point.position = p;
           point.is_a_point = true;
-          scene.addObject(point);
+          scene.add(point);
         }
 
       }
     }
 
-  }
+  }*/
 
-  function onMouseOut(event) {
+  /*function onMouseOut(event) {
     container.removeEventListener('mousemove', onMouseMove, false);
     container.removeEventListener('mouseup', onMouseUp, false);
     container.removeEventListener('mouseout', onMouseOut, false);
@@ -525,28 +605,36 @@ DAT.Globe = function(container, colorFn) {
     distanceTarget -= delta;
     distanceTarget = distanceTarget > 1000 ? 1000 : distanceTarget;
     distanceTarget = distanceTarget < 350 ? 350 : distanceTarget;
-  }
+  }*/
   // var time = Date.now();
+
   function animate(t) {
     requestAnimationFrame(animate);
-    // t = t || Date.now();
-    render(10);
-    // time = t;
+    // TWEEN.update();
+    // controls.update();
+    render();
   }
 
-  function render(dt) {
-    zoom(curZoomSpeed);
 
-    rotation.x += (target.x - rotation.x) * 0.1;
-    rotation.y += (target.y - rotation.y) * 0.1;
-    distance += (distanceTarget - distance) * 0.05;
-    target.x -= 0.003 * Math.min(33,dt)/16;
+  /*function transform( targets, duration ) {
+      new TWEEN.Tween( this )
+        .to( {}, duration * 2 )
+        .onUpdate( render )
+        .start();
+      }*/
 
-    camera.position.x = distance * Math.sin(rotation.x) * Math.cos(rotation.y);
-    camera.position.y = distance * Math.sin(rotation.y);
-    camera.position.z = distance * Math.cos(rotation.x) * Math.cos(rotation.y);
+  angle = 0;
+  radius = 1000;
 
-    vector.copy(camera.position);
+  function render() {
+    // zoom(curZoomSpeed);
+    // camera.position.x = radius * Math.cos( angle );  
+    // camera.position.z = radius * Math.sin( angle );
+    // camera.lookAt(new THREE.Vector3(0,0,0));
+    angle += 0.005;
+    if (angle > Math.PI*2) angle = 0;
+    // console.log(scene)
+    CSSRenderer.render(tweetScene, camera);
 
     renderer.clear();
     renderer.render(scene, camera);
@@ -554,41 +642,15 @@ DAT.Globe = function(container, colorFn) {
   }
 
   init();
+  // transform([], 2000 );
   this.animate = animate;
-
-
-  this.__defineGetter__('time', function() {
-    return this._time || 0;
-  });
-
-  this.__defineSetter__('time', function(t) {
-    var validMorphs = [];
-    var morphDict = this.points.morphTargetDictionary;
-    for(var k in morphDict) {
-      if(k.indexOf('morphPadding') < 0) {
-        validMorphs.push(morphDict[k]);
-      }
-    }
-    validMorphs.sort();
-    var l = validMorphs.length-1;
-    var scaledt = t*l+1;
-    var index = Math.floor(scaledt);
-    for (i=0;i<validMorphs.length;i++) {
-      this.points.morphTargetInfluences[validMorphs[i]] = 0;
-    }
-    var lastIndex = index - 1;
-    var leftover = scaledt - index;
-    if (lastIndex >= 0) {
-      this.points.morphTargetInfluences[lastIndex] = 1 - leftover;
-    }
-    this.points.morphTargetInfluences[index] = leftover;
-    this._time = t;
-  });
+  animate();
 
   this.addData = addData;
   this.createPoints = createPoints;
   this.renderer = renderer;
   this.scene = scene;
+  this.addTweet = addTweetMarker;
 
   return this;
 
