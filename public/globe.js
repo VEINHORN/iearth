@@ -345,10 +345,6 @@ DAT.Globe = function(container, colorFn) {
       image.src = tweet.image;
       element.appendChild( image );
       element.appendChild(text);
-      element.addEventListener("click", function() {
-        console.log('hey', tweet)
-      })
-
 
   
       object = new THREE.CSS3DObject( element );
