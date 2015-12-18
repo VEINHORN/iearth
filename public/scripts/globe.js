@@ -306,6 +306,7 @@ DAT.Globe = function(container, colorFn) {
       vector = new THREE.Vector3(x,y,z);
 
       planeMesh.lookAt(vector);
+      planeMesh.name = tweet.id.toString();
 
       scene.add(planeMesh);
   
@@ -315,19 +316,27 @@ DAT.Globe = function(container, colorFn) {
       text.innerHTML = tweet.text;
       var image = document.createElement('img');
       image.src = tweet.image;
-      element.appendChild( image );
-      element.appendChild(text);
-  
-      object = new THREE.CSS3DObject(element );
-      element.parent = object;
+      var i = document.createElement('i');
+      i.className = "fa fa-times";
+      i.id = tweet.id;
 
-      object.element.onclick = function(event) {
-        console.log(event.target);
-        console.log('hey');
+      i.onclick = function(event) {
+        var id = event.target.id.toString();
+        console.log(event.target)
+
+        tweetScene.remove(tweetScene.getObjectByName(id));
+        scene.remove(scene.getObjectByName(id))
       };
 
-      object.scale.x = 0.25;
-      object.scale.y = 0.25;
+      element.appendChild( image );
+      element.appendChild(text);
+      element.appendChild(i);
+  
+      object = new THREE.CSS3DObject(element );
+      object.name = tweet.id.toString();
+
+      object.scale.x = 0.125;
+      object.scale.y = 0.125;
   
       object.position = planeMesh.position;
       object.lookAt(vector);
