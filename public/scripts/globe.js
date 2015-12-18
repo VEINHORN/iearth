@@ -149,15 +149,10 @@ DAT.Globe = function(container, colorFn) {
     geometry = new THREE.SphereGeometry(200, 40, 40);
 
     blueMaterial = new THREE.MeshLambertMaterial( { color: 0xB6E5FC, transparent: true, opacity: 0.1 } );
-    // blueMaterial.blending  = THREE.NoBlending;
 
     mesh = new THREE.Mesh(geometry, blueMaterial);
     mesh.matrixAutoUpdate = false;
     scene.add(mesh);
-
-    // addTweetMarker(35.52472915, 139.41336078);
-
-    // addTweetMarker(28.90944448, 40.99504243);
 
 
 
@@ -260,23 +255,21 @@ DAT.Globe = function(container, colorFn) {
     renderer.domElement.style.position = 'absolute';
     renderer.domElement.style.top = 0;
     renderer.domElement.style.zIndex  = 1;
+    renderer.domElement.style.pointerEvents  = 'none';
     document.body.appendChild( renderer.domElement );
 
     var coastLine = getCoast();
 
     this.is_animated = false;
     this._baseGeometry = new THREE.Geometry();
-    createPoints();
+    // createPoints();
 
     container.appendChild(renderer.domElement);
 
-    /*controls = new THREE.TrackballControls( camera, renderer.domElement );
-    controls.rotateSpeed = 10;
-    controls.minDistance = 500;
-    controls.maxDistance = 6000;
-    controls.addEventListener( 'change', render );*/
     controls = new THREE.OrbitControls( camera );
     controls.addEventListener( 'change', render );
+    controls.noZoom = false;
+
 
     CSSRenderer = new THREE.CSS3DRenderer();
     CSSRenderer.setSize( window.innerWidth, window.innerHeight );
@@ -284,25 +277,6 @@ DAT.Globe = function(container, colorFn) {
     CSSRenderer.domElement.style.top = 0;
     // CSSRenderer.domElement.style.zIndex  = 10;
     container.appendChild( CSSRenderer.domElement );
-
-
-    /*container.addEventListener('mousedown', onMouseDown, false);
-
-    container.addEventListener('mousewheel', onMouseWheel, false);
-
-    document.addEventListener('keydown', onDocumentKeyDown, false);
-
-    window.addEventListener('resize', onWindowResize, false);
-
-    container.addEventListener('mouseover', function() {
-      overRenderer = true;
-    }, false);
-
-    container.addEventListener('mouseout', function() {
-      overRenderer = false;
-    }, false);*/
-
-    // render(10);
   }
 
   var addTweetMarker = function(tweet) {
@@ -332,282 +306,40 @@ DAT.Globe = function(container, colorFn) {
       vector = new THREE.Vector3(x,y,z);
 
       planeMesh.lookAt(vector);
-      // planeMesh.rotation.x = 10;
 
       scene.add(planeMesh);
-      // console.log(scene);
   
       var element = document.createElement( 'div' );
       element.className = 'element';
-      var text = document.createElement( 'p' );
+      var text = document.createElement('p');
       text.innerHTML = tweet.text;
-      var image = document.createElement( 'img' );
+      var image = document.createElement('img');
       image.src = tweet.image;
       element.appendChild( image );
       element.appendChild(text);
-
   
-      object = new THREE.CSS3DObject( element );
+      object = new THREE.CSS3DObject(element );
+      element.parent = object;
+
+      object.element.onclick = function(event) {
+        console.log(event.target);
+        console.log('hey');
+      };
+
       object.scale.x = 0.25;
       object.scale.y = 0.25;
-
-  
-      console.log(planeMesh)
   
       object.position = planeMesh.position;
       object.lookAt(vector);
-      // object.rotation = planeMesh.rotation;
-  
-  
-      // object.lookAt(mesh.position);
   
       tweetScene.add(object);
       render();
     }
 
-  addData = function(data, opts) {
-    var lat, lng, size, color, i, step, colorFnWrapper;
-
-    opts.animated = opts.animated || false;
-    this.is_animated = opts.animated;
-    opts.format = opts.format || 'magnitude'; // other option is 'legend';
-    if (opts.format === 'magnitude') {
-      step = 3;
-      colorFnWrapper = function(data, i) { return colorFn(data[i+2]); }
-    } else if (opts.format === 'legend') {
-      step = 4;
-      colorFnWrapper = function(data, i) { return colorFn(data[i+3]); }
-    } else {
-      throw('error: format not supported: '+opts.format);
-    }
-
-    if (opts.animated) {
-      if (this._baseGeometry === undefined) {
-        this._baseGeometry = new THREE.Geometry();
-        for (i = 0; i < data.length; i += step) {
-          lat = data[i];
-          lng = data[i + 1];
-//        size = data[i + 2];
-          color = colorFnWrapper(data,i);
-          size = 0;
-          addPoint(lat, lng, size, color, this._baseGeometry);
-        }
-      }
-      if(this._morphTargetId === undefined) {
-        this._morphTargetId = 0;
-      } else {
-        this._morphTargetId += 1;
-      }
-      opts.name = opts.name || 'morphTarget'+this._morphTargetId;
-    }
-    var subgeo = new THREE.Geometry();
-    for (i = 0; i < data.length; i += step) {
-      lat = data[i];
-      lng = data[i + 1];
-      color = colorFnWrapper(data,i);
-      size = data[i + 2];
-      size = size*200;
-      addPoint(lat, lng, size, color, subgeo);
-    }
-    if (opts.animated) {
-      this._baseGeometry.morphTargets.push({'name': opts.name, vertices: subgeo.vertices});
-    } else {
-      this._baseGeometry = subgeo;
-    }
-
-  };
-
-  function createPoints() {
-    if (this._baseGeometry !== undefined) {
-      if (this.is_animated === false) {
-        this.points = new THREE.Mesh(this._baseGeometry, new THREE.MeshBasicMaterial({
-              color: 0xffffff,
-              vertexColors: THREE.FaceColors,
-              morphTargets: false
-            }));
-      } else {
-        if (this._baseGeometry.morphTargets.length < 8) {
-          console.log('t l',this._baseGeometry.morphTargets.length);
-          var padding = 8-this._baseGeometry.morphTargets.length;
-          console.log('padding', padding);
-          for(var i=0; i<=padding; i++) {
-            console.log('padding',i);
-            this._baseGeometry.morphTargets.push({'name': 'morphPadding'+i, vertices: this._baseGeometry.vertices});
-          }
-        }
-        this.points = new THREE.Mesh(this._baseGeometry, new THREE.MeshBasicMaterial({
-              color: 0xffffff,
-              vertexColors: THREE.FaceColors,
-              morphTargets: true
-            }));
-      }
-      scene.add(this.points);
-    }
-  }
-
-  function addPointXYZ(x, y, z, size, color, subgeo) {
-    point.position.x = x;
-    point.position.y = y;
-    point.position.z = z;
-
-    point.lookAt(mesh.position);
-
-    point.scale.z = -size;
-    point.updateMatrix();
-
-    var i;
-    for (i = 0; i < point.geometry.faces.length; i++) {
-
-      point.geometry.faces[i].color = color;
-
-    }
-
-    GeometryUtils.merge(subgeo, point);
-  }
-
-  function addPoint(lat, lng, size, color, subgeo) {
-    var phi = (90 - lat) * Math.PI / 180;
-    var theta = (180 - lng) * Math.PI / 180;
-
-    var x = 200 * Math.sin(phi) * Math.cos(theta);
-    var y = 200 * Math.cos(phi);
-    var z = 200 * Math.sin(phi) * Math.sin(theta);
-
-    return addPointXYZ(x,y,z,size,color,subgeo);
-  }
-
-  function addPointAt(p, size, color, subgeo) {
-    return addPointXYZ(p.x, p.y, p.z, size, color, subgeo);
-  }
-
-
-  /*function onMouseDown(event) {
-    event.preventDefault();
-
-    container.addEventListener('mousemove', onMouseMove, false);
-    container.addEventListener('mouseup', onMouseUp, false);
-    container.addEventListener('mouseout', onMouseOut, false);
-
-    mouseOnDown.x = - event.clientX;
-    mouseOnDown.y = event.clientY;
-
-    targetOnDown.x = target.x;
-    targetOnDown.y = target.y;
-
-    clickEnabled = true;
-
-    container.style.cursor = 'move';
-
-  }*/
-
-  /*function onMouseMove(event) {
-    mouse.x = - event.clientX;
-    mouse.y = event.clientY;
-
-    var dx = mouseOnDown.x - (-event.clientX);
-    var dy = mouseOnDown.y - event.clientY;
-    var d = Math.sqrt(dx*dx + dy*dy);
-    if (d > 5) {
-      clickEnabled = false;
-    }
-
-    var zoomDamp = distance/1000;
-
-    target.x = targetOnDown.x + (mouse.x - mouseOnDown.x) * 0.01 * zoomDamp;
-    target.y = targetOnDown.y + (mouse.y - mouseOnDown.y) * 0.01 * zoomDamp;
-
-    target.y = target.y > PI_HALF ? PI_HALF : target.y;
-    target.y = target.y < - PI_HALF ? - PI_HALF : target.y;
-  }*/
-
-  lastClick = 0;
-
-  /*function onMouseUp(event) {
-    container.removeEventListener('mousemove', onMouseMove, false);
-    container.removeEventListener('mouseup', onMouseUp, false);
-    container.removeEventListener('mouseout', onMouseOut, false);
-    container.style.cursor = 'auto';
-
-    if (clickEnabled) {
-      var t = new Date().getTime();
-      var dblClick = (t-lastClick < 300);
-      lastClick = t;
-
-      var vector = new THREE.Vector3( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1, 0.5 );
-      // projector.unprojectVector( vector, camera );
-
-      // var ray = new THREE.Ray( camera.position, vector.subSelf( camera.position ).normalize() );
-
-      var intersects = ray.intersectScene( scene );
-      if ( intersects.length > 0 ) {
-
-        if (intersects[0].object.is_a_point) {
-          if (dblClick) {
-            scene.removeObject(intersects[0].object);
-          } else {
-            intersects[0].object.materials[0].color.setHex( Math.random() * 0xffffff );
-          }
-        } else if (dblClick) {
-          var p = intersects[ 0 ].point;
-          var geometry = new THREE.Cube(4,4,4,4,4,4);
-          var point = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
-            color: 0xff00ff
-          }));
-          point.position = p;
-          point.is_a_point = true;
-          scene.add(point);
-        }
-
-      }
-    }
-
-  }*/
-
-  /*function onMouseOut(event) {
-    container.removeEventListener('mousemove', onMouseMove, false);
-    container.removeEventListener('mouseup', onMouseUp, false);
-    container.removeEventListener('mouseout', onMouseOut, false);
-  }
-
-  function onMouseWheel(event) {
-    event.preventDefault();
-    if (overRenderer) {
-      zoom(event.wheelDeltaY * 0.3);
-    }
-    return false;
-  }
-
-  function onDocumentKeyDown(event) {
-    switch (event.keyCode) {
-      case 38:
-        zoom(100);
-        event.preventDefault();
-        break;
-      case 40:
-        zoom(-100);
-        event.preventDefault();
-        break;
-    }
-  }
-
-  function onWindowResize( event ) {
-    console.log('resize');
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize( window.innerWidth, window.innerHeight );
-  }
-
-  function zoom(delta) {
-    distanceTarget -= delta;
-    distanceTarget = distanceTarget > 1000 ? 1000 : distanceTarget;
-    distanceTarget = distanceTarget < 350 ? 350 : distanceTarget;
-  }*/
-  // var time = Date.now();
-
   function animate(t) {
     requestAnimationFrame(animate);
     // TWEEN.update();
-    // controls.update();
+    controls.update();
     render();
   }
 
@@ -624,14 +356,13 @@ DAT.Globe = function(container, colorFn) {
 
   function render() {
     // zoom(curZoomSpeed);
-    // camera.position.x = radius * Math.cos( angle );  
-    // camera.position.z = radius * Math.sin( angle );
-    // camera.lookAt(new THREE.Vector3(0,0,0));
+    /*camera.position.x = radius * Math.cos( angle );  
+    camera.position.z = radius * Math.sin( angle );
+    camera.lookAt(new THREE.Vector3(0,0,0));
     angle += 0.005;
-    if (angle > Math.PI*2) angle = 0;
-    // console.log(scene)
-    CSSRenderer.render(tweetScene, camera);
+    if (angle > Math.PI*2) angle = 0;*/
 
+    CSSRenderer.render(tweetScene, camera);
     renderer.clear();
     renderer.render(scene, camera);
     renderer.render(sceneAtmosphere, camera);
@@ -642,8 +373,6 @@ DAT.Globe = function(container, colorFn) {
   this.animate = animate;
   animate();
 
-  this.addData = addData;
-  this.createPoints = createPoints;
   this.renderer = renderer;
   this.scene = scene;
   this.addTweet = addTweetMarker;
