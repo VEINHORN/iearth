@@ -279,6 +279,31 @@ DAT.Globe = function(container, colorFn) {
     container.appendChild( CSSRenderer.domElement );
   }
 
+  var transformCoordinates = function(lat, lng, offset) {
+      var phi = (90 - lat) * Math.PI / 180;
+      var theta = (180 - lng) * Math.PI / 180;
+  
+      var x = (200 + offset) * Math.sin(phi) * Math.cos(theta);
+      var y = (200 + offset) * Math.cos(phi);
+      var z = (200 + offset) * Math.sin(phi) * Math.sin(theta);
+
+      return new THREE.Vector3(x, y, z)
+  }
+
+
+  var addCityMarker = function(city) {
+    var lat = 53, lng = 27;
+    var markerSize = 2;
+    var geometry = new THREE.SphereGeometry(markerSize, 16, 16);
+    var blueMaterial = new THREE.MeshPhongMaterial( { color: 0xF20A0A} );
+    var mesh = new THREE.Mesh(geometry, blueMaterial);
+    mesh.position = transformCoordinates(lat, lng, markerSize*2)
+    var light = new THREE.PointLight( 0xff0000, 1, 100 );
+    light.position = transformCoordinates(lat, lng, markerSize*4)
+    scene.add( light );
+    scene.add(mesh);
+  }
+
   var addTweetMarker = function(tweet) {
       var material = new THREE.MeshBasicMaterial();
       var geometry = new THREE.PlaneGeometry(102, 32, 32);
@@ -287,23 +312,9 @@ DAT.Globe = function(container, colorFn) {
       material.blending  = THREE.NoBlending;
       material.side = THREE.DoubleSide;
       var planeMesh= new THREE.Mesh( geometry, material );
-  
-      var phi = (90 - tweet.lat) * Math.PI / 180;
-      var theta = (180 - tweet.lng) * Math.PI / 180;
-  
-      var x = 230 * Math.sin(phi) * Math.cos(theta);
-      var y = 230 * Math.cos(phi);
-      var z = 230 * Math.sin(phi) * Math.sin(theta);
 
-      planeMesh.position.x = x;
-      planeMesh.position.y = y;
-      planeMesh.position.z = z;
-
-      x = 240 * Math.sin(phi) * Math.cos(theta);
-      y = 240 * Math.cos(phi);
-      z = 240 * Math.sin(phi) * Math.sin(theta);
-
-      vector = new THREE.Vector3(x,y,z);
+      planeMesh.position = transformCoordinates(tweet.lat, tweet.lng, 30);
+      vector = transformCoordinates(tweet.lat, tweet.lng, 40);
 
       planeMesh.lookAt(vector);
       planeMesh.name = tweet.id.toString();
@@ -322,10 +333,36 @@ DAT.Globe = function(container, colorFn) {
 
       i.onclick = function(event) {
         var id = event.target.id.toString();
-        console.log(event.target)
 
-        tweetScene.remove(tweetScene.getObjectByName(id));
-        scene.remove(scene.getObjectByName(id))
+        TWEEN.removeAll();
+
+        var tweet = tweetScene.getObjectByName(id);
+        var tweetPlane = scene.getObjectByName(id);
+
+        var moveTween = new TWEEN.Tween(tweetPlane.position)
+            .to( { x: 1000, y: 1000, z: 1000 },1000)
+            .easing( TWEEN.Easing.Exponential.InOut );
+
+        moveTween.start();
+        moveTween.onComplete(function() {
+          tweetScene.remove(tweet);
+          scene.remove(tweetPlane);
+        });
+
+        var rotateTween =  new TWEEN.Tween( tweetPlane.rotation )
+            .to( { x: 10, y: 10, z: 10 }, 1000 )
+            .easing( TWEEN.Easing.Exponential.InOut )
+        rotateTween.start();
+
+        /*new TWEEN.Tween(tweet)
+            .to( { x: 300, y: 300, z: 300 },1000)
+            .easing( TWEEN.Easing.Exponential.InOut )
+            .start();*/
+
+        /* TWEEN.Tween( this )
+            .to( {}, 1000)
+            .onUpdate( render )
+            .start();*/
       };
 
       element.appendChild( image );
@@ -347,18 +384,10 @@ DAT.Globe = function(container, colorFn) {
 
   function animate(t) {
     requestAnimationFrame(animate);
-    // TWEEN.update();
+    TWEEN.update();
     controls.update();
     render();
   }
-
-
-  /*function transform( targets, duration ) {
-      new TWEEN.Tween( this )
-        .to( {}, duration * 2 )
-        .onUpdate( render )
-        .start();
-      }*/
 
   angle = 0;
   radius = 1000;
@@ -378,13 +407,14 @@ DAT.Globe = function(container, colorFn) {
   }
 
   init();
-  // transform([], 2000 );
+  // transform([], 2000 )
   this.animate = animate;
   animate();
 
   this.renderer = renderer;
   this.scene = scene;
   this.addTweet = addTweetMarker;
+  this.addCityMarker = addCityMarker;
 
   return this;
 

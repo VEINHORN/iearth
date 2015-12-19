@@ -155,7 +155,7 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r65/three.js"></script>
-  <script type="text/javascript" src="third-party/Tween.js"></script>
+  <script type="text/javascript" src="third-party/tween.min.js"></script>
   <script type="text/javascript" src="TrackballControls.js"></script>
   <script type="text/javascript" src="third-party/CSSRenderer.js"></script>
   <script src="https://dl.dropboxusercontent.com/u/3587259/Code/Threejs/OrbitControls.js"></script>
@@ -189,6 +189,7 @@
 
       var container = document.getElementById('container');
       var globe = new DAT.Globe(container);
+      globe.addCityMarker();
 
       // globe.animate();
 
