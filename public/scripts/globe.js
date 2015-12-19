@@ -349,20 +349,10 @@ DAT.Globe = function(container, colorFn) {
           scene.remove(tweetPlane);
         });
 
-        var rotateTween =  new TWEEN.Tween( tweetPlane.rotation )
+        /*var rotateTween =  new TWEEN.Tween( tweetPlane.rotation )
             .to( { x: 10, y: 10, z: 10 }, 1000 )
             .easing( TWEEN.Easing.Exponential.InOut )
-        rotateTween.start();
-
-        /*new TWEEN.Tween(tweet)
-            .to( { x: 300, y: 300, z: 300 },1000)
-            .easing( TWEEN.Easing.Exponential.InOut )
-            .start();*/
-
-        /* TWEEN.Tween( this )
-            .to( {}, 1000)
-            .onUpdate( render )
-            .start();*/
+        rotateTween.start();*/
       };
 
       element.appendChild( image );
