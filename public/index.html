@@ -166,15 +166,23 @@
   <script type="text/javascript" src="third-party/jquery.min.js"></script>
   <script type="text/javascript" src="third-party/toastr.min.js"></script>
   <script type="text/javascript">
-
       var socket = io();
       socket.on("tweet", function(tweet) {
         console.log(tweet)
+        var text = tweet.text;
+        tweet.entities.urls.forEach(function(elm, i, arr) {
+          var a = document.createElement('a');
+          a.setAttribute('href', elm.url);
+          a.innerHTML = elm.url;
+
+          text = text.replace(elm.url, a.outerHTML);
+        });
+        console.log(text);
         var tweetForGlobe = {
           id: tweet.id,
           lat: tweet.coordinates.coordinates[1],
           lng: tweet.coordinates.coordinates[0],
-          text : tweet.text,
+          text : text,
           image: tweet.user.profile_image_url
         }
         globe.addTweet(tweetForGlobe);
@@ -188,7 +196,7 @@
             window.open(url, '_blank');
           }
         }
-        toastr.info("<div><p>" + tweet.text + "</p></div>");
+        toastr.info("<div><p>" + text + "</p></div>");
       });
 
       var container = document.getElementById('container');
