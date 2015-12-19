@@ -127,11 +127,11 @@
        .element:before {
         content: "";
         display: block;
-        width: 0; 
-        height: 0; 
+        width: 0;
+        height: 0;
         border-left: 14px solid transparent;
         border-top: 14px solid  transparent;
-        border-right: 14px solid transparent; 
+        border-right: 14px solid transparent;
         position: absolute;
         top: 60px;
         left: 0;
@@ -182,7 +182,11 @@
           "closeButton": true,
           "newestOnTop": true,
           "timeOut": 30000,
-          "progressBar": true
+          "progressBar": true,
+          "onclick": function() {
+            var url = "https://twitter.com/" + tweet.user.name + "/status/" + tweet.id_str;
+            window.open(url, '_blank');
+          }
         }
         toastr.info("<div><p>" + tweet.text + "</p></div>");
       });
