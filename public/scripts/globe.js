@@ -304,7 +304,36 @@ DAT.Globe = function(container, colorFn) {
     scene.add(mesh);
   }
 
-  var addTweetMarker = function(tweet) {
+
+  var Tweet = function(tweet) {
+    var self = this;
+    this.tweet = tweet;
+    var lifeTime = 5000;
+    var distance = 2000;
+
+    var removeTweet = function () {
+      var id = tweet.id.toString();
+      // TWEEN.removeAll();
+      var tweetHTML = tweetScene.getObjectByName(id);
+      var tweetPlane = scene.getObjectByName(id);
+      var targetPosition = transformCoordinates(tweet.lat, tweet.lng, distance)
+      var moveTween = new TWEEN.Tween(tweetPlane.position)
+          .to({
+            x: targetPosition.x, 
+            y: targetPosition.y, 
+            z: targetPosition.z
+          }, distance)
+          .easing( TWEEN.Easing.Exponential.InOut );
+      moveTween.start();
+
+      moveTween.onComplete(function() {
+        tweetScene.remove(tweetHTML);
+        scene.remove(tweetPlane);
+      });
+    }
+
+    var addTweetMarker = function() {
+      console.log(tweet)
       var material = new THREE.MeshBasicMaterial();
       var geometry = new THREE.PlaneGeometry(102, 32, 32);
       material.color.set('black')
@@ -312,13 +341,10 @@ DAT.Globe = function(container, colorFn) {
       material.blending  = THREE.NoBlending;
       material.side = THREE.DoubleSide;
       var planeMesh= new THREE.Mesh( geometry, material );
-
-      planeMesh.position = transformCoordinates(tweet.lat, tweet.lng, 30);
-      vector = transformCoordinates(tweet.lat, tweet.lng, 40);
-
+      planeMesh.position = transformCoordinates(tweet.lat, tweet.lng, distance);
+      vector = transformCoordinates(tweet.lat, tweet.lng, distance + 1);
       planeMesh.lookAt(vector);
       planeMesh.name = tweet.id.toString();
-
       scene.add(planeMesh);
   
       var element = document.createElement( 'div' );
@@ -330,47 +356,43 @@ DAT.Globe = function(container, colorFn) {
       var i = document.createElement('i');
       i.className = "fa fa-times";
       i.id = tweet.id;
-
+  
       i.onclick = function(event) {
-        var id = event.target.id.toString();
-
-        TWEEN.removeAll();
-
-        var tweet = tweetScene.getObjectByName(id);
-        var tweetPlane = scene.getObjectByName(id);
-
-        var moveTween = new TWEEN.Tween(tweetPlane.position)
-            .to( { x: 1000, y: 1000, z: 1000 },1000)
-            .easing( TWEEN.Easing.Exponential.InOut );
-
-        moveTween.start();
-        moveTween.onComplete(function() {
-          tweetScene.remove(tweet);
-          scene.remove(tweetPlane);
-        });
-
-        /*var rotateTween =  new TWEEN.Tween( tweetPlane.rotation )
-            .to( { x: 10, y: 10, z: 10 }, 1000 )
-            .easing( TWEEN.Easing.Exponential.InOut )
-        rotateTween.start();*/
+        removeTweet();
       };
-
+  
       element.appendChild( image );
       element.appendChild(text);
       element.appendChild(i);
   
       object = new THREE.CSS3DObject(element );
       object.name = tweet.id.toString();
-
       object.scale.x = 0.125;
       object.scale.y = 0.125;
   
       object.position = planeMesh.position;
       object.lookAt(vector);
+      var targetPosition = transformCoordinates(tweet.lat, tweet.lng, 30);
   
       tweetScene.add(object);
       render();
+      var moveTween = new TWEEN.Tween(planeMesh.position)
+        .to({
+          x: targetPosition.x, 
+          y: targetPosition.y, 
+          z: targetPosition.z
+        }, distance)
+        .easing( TWEEN.Easing.Exponential.InOut );
+      moveTween.start();
     }
+
+    addTweetMarker();
+    setTimeout(removeTweet, lifeTime)
+  }
+
+  var addTweetMarker = function(tweet) {
+    var tweet = new Tweet(tweet);
+  }
 
   function animate(t) {
     requestAnimationFrame(animate);
@@ -389,6 +411,8 @@ DAT.Globe = function(container, colorFn) {
     camera.lookAt(new THREE.Vector3(0,0,0));
     angle += 0.005;
     if (angle > Math.PI*2) angle = 0;*/
+    scene._rotation.x += 0.01;
+    scene._rotation.y += 0.01;
 
     CSSRenderer.render(tweetScene, camera);
     renderer.clear();
